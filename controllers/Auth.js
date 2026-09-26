@@ -3,6 +3,8 @@ const OTP=require("../models/OTP");
 const otpGenerator=require("otp-generator");
 const Profile = require("../models/Profile");
 const bcrypt=require("bcrypt");
+const jwt=require("jsonwebtoken");
+require("dotenv").config();
 
  // send OTP
 
@@ -213,14 +215,69 @@ exports.login=async(req,res)=>{
             })
         }
 
+        // match the password
         // generate jwt token , after password match
         
+        if(await bcrypt.compare(password,user.password)) {
 
-        // create cookie and send response 
-    } catch (error) {
+       
+            const payload={
+                email:user.email,
+                id:user._id,
+                accountType:user.accountType,
+            }
+
+            const token = jwt.sign(payload,process.env.JWT_SECRET,{
+                expiresIn:"2h"
+            });
+
+            user.token=token;
+            user.password=undefined;
+
+// create cookie and send response 
+const options={
+    expires:new Date(Date.now()+3*24*60*60*1000),
+    httpOnly:true,
+}
+res.cookie("token",token,options).status(200).json({
+    success:true,
+    token,
+    user,
+    message:"Logged in Successfully",
+})
+        }else{
+            res.status(401).json({
+                success:false,
+                message:'Password is incorrect'
+            })
+        }
+
         
+        
+
+        
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            success:false,
+            message:"Login Failure , Please Try Again!"
+        })
     }
 }
 
 //Change Password
+
+exports.changePassword=async(req,res)=>{
+    // get data from req Body
+    //get old Password , new pasword , conform Nrew Passwopord
+    // validation
+    
+
+    // update password in DB 
+
+    // sennd mail -> DB Password
+
+    // return response 
+
+} 
 
